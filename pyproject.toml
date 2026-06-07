@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "launch-economics"
+version = "1.0.0"
+description = "Aerospace Data Science: SpaceX Falcon 9 Launch Economics Analysis"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=1.5.0",
+    "numpy>=1.23.0",
+    "plotly>=5.13.0",
+    "scikit-learn>=1.2.0",
+    "scipy>=1.10.0",
+    "streamlit>=1.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter>=1.0.0",
+    "matplotlib>=3.6.0",
+    "seaborn>=0.12.0",
+]

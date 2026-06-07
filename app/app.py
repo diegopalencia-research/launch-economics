@@ -1,1008 +1,1002 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
-# Visualization libraries
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-# ============================================================
-# PAGE CONFIGURATION
-# ============================================================
+# ── PAGE CONFIG ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="⟁ Launch Economics: The Oracle of Reusability ⟁",
-    page_icon="🚀",
+    page_title="Falcon 9 Launch Economics — Project Alpha",
+    page_icon="🛰",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ============================================================
-# SACRED COLOR PALETTE
-# ============================================================
-SC = {
-    'deep_void': '#0A0A1A',
-    'nebula_purple': '#4A0E4E',
-    'sacred_gold': '#D4AF37',
-    'mystic_teal': '#0D7377',
-    'organic_emerald': '#1B5E20',
-    'dmt_coral': '#FF6B6B',
-    'ethereal_blue': '#4FC3F7',
-    'amber_resin': '#FF8F00',
-    'sacred_crimson': '#B71C1C',
-    'mushroom_ivory': '#FFF8E1',
-    'forest_deep': '#1B4332',
-    'lotus_pink': '#F8BBD0',
-    'mandala_orange': '#FF5722',
-    'crystal_cyan': '#00BCD4',
-    'obsidian': '#1C1C1C',
+# ── DESIGN SYSTEM ──────────────────────────────────────────────────────────────
+# Palette: deep space navy + cold white + electric cyan accent + amber warning
+COLORS = {
+    'bg':        '#04070F',
+    'surface':   '#080E1C',
+    'border':    '#112240',
+    'border2':   '#1E3A5F',
+    'text':      '#C8D8E8',
+    'muted':     '#5A7A9A',
+    'accent':    '#00D4FF',
+    'accent2':   '#0099CC',
+    'amber':     '#F5A623',
+    'red':       '#E84040',
+    'green':     '#1FD0A0',
+    'white':     '#EEF4FA',
 }
 
-# ============================================================
-# CUSTOM CSS - SACRED NEO-BYZANTINE AESTHETIC
-# ============================================================
-st.markdown("""
+PLOTLY_LAYOUT = dict(
+    plot_bgcolor=COLORS['bg'],
+    paper_bgcolor=COLORS['surface'],
+    font=dict(color=COLORS['text'], family='monospace', size=12),
+    margin=dict(l=50, r=30, t=50, b=50),
+    xaxis=dict(
+        gridcolor='rgba(17,34,64,0.8)',
+        linecolor=COLORS['border2'],
+        tickfont=dict(color=COLORS['muted'], size=11),
+        zerolinecolor=COLORS['border2'],
+    ),
+    yaxis=dict(
+        gridcolor='rgba(17,34,64,0.8)',
+        linecolor=COLORS['border2'],
+        tickfont=dict(color=COLORS['muted'], size=11),
+        zerolinecolor=COLORS['border2'],
+    ),
+    legend=dict(
+        bgcolor='rgba(8,14,28,0.9)',
+        bordercolor=COLORS['border2'],
+        borderwidth=1,
+        font=dict(color=COLORS['text'], size=11),
+    ),
+    hoverlabel=dict(
+        bgcolor=COLORS['surface'],
+        bordercolor=COLORS['accent'],
+        font=dict(color=COLORS['white'], size=12, family='monospace'),
+    ),
+    hovermode='x unified',
+)
+
+st.markdown(f"""
 <style>
-    /* Main background - Deep Void */
-    .stApp {
-        background: linear-gradient(135deg, #0A0A1A 0%, #1A0A2E 50%, #0A1A1A 100%);
-    }
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap');
 
-    /* Sidebar */
-    .css-1d391kg, .css-163ttbj {
-        background: linear-gradient(180deg, #0A0A1A 0%, #1A0A2E 100%) !important;
-    }
+*, *::before, *::after {{ box-sizing: border-box; }}
 
-    /* Text colors */
-    h1, h2, h3, h4, h5, h6 {
-        color: #D4AF37 !important;
-        font-family: 'Georgia', serif !important;
-    }
+.stApp {{
+    background: {COLORS['bg']};
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,180,255,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,212,255,0.04) 0%, transparent 50%);
+}}
 
-    p, li, span {
-        color: #FFF8E1 !important;
-        font-family: 'Georgia', serif !important;
-    }
+/* Sidebar */
+[data-testid="stSidebar"] {{
+    background: {COLORS['surface']} !important;
+    border-right: 1px solid {COLORS['border']} !important;
+}}
+[data-testid="stSidebar"] > div:first-child {{
+    padding-top: 0;
+}}
 
-    /* Metric cards */
-    .stMetric {
-        background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%) !important;
-        border: 1px solid #D4AF37 !important;
-        border-radius: 15px !important;
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3) !important;
-    }
+/* All headings */
+h1, h2, h3, h4, h5, h6 {{
+    font-family: 'Syne', sans-serif !important;
+    color: {COLORS['white']} !important;
+    letter-spacing: -0.02em;
+}}
 
-    .stMetric label {
-        color: #D4AF37 !important;
-        font-weight: bold !important;
-    }
+/* Body text */
+p, li, span, div, label {{
+    font-family: 'Space Mono', monospace !important;
+    color: {COLORS['text']};
+    font-size: 12px;
+}}
 
-    .stMetric .css-1xarl3l {
-        color: #FFF8E1 !important;
-        font-size: 24px !important;
-        font-weight: bold !important;
-    }
+/* Metrics */
+[data-testid="stMetric"] {{
+    background: {COLORS['surface']} !important;
+    border: 1px solid {COLORS['border2']} !important;
+    border-top: 2px solid {COLORS['accent']} !important;
+    border-radius: 2px !important;
+    padding: 16px 20px !important;
+}}
+[data-testid="stMetricLabel"] {{
+    font-family: 'Space Mono', monospace !important;
+    font-size: 10px !important;
+    color: {COLORS['muted']} !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.12em !important;
+}}
+[data-testid="stMetricValue"] {{
+    font-family: 'Syne', sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    color: {COLORS['white']} !important;
+}}
+[data-testid="stMetricDelta"] {{
+    font-family: 'Space Mono', monospace !important;
+    font-size: 10px !important;
+}}
 
-    /* Buttons */
-    .stButton>button {
-        background: linear-gradient(135deg, #4A0E4E 0%, #0D7377 100%) !important;
-        color: #FFF8E1 !important;
-        border: 1px solid #D4AF37 !important;
-        border-radius: 25px !important;
-        font-family: 'Georgia', serif !important;
-        transition: all 0.3s ease !important;
-    }
+/* Tabs */
+[data-baseweb="tab-list"] {{
+    background: transparent !important;
+    border-bottom: 1px solid {COLORS['border2']} !important;
+    gap: 0 !important;
+}}
+[data-baseweb="tab"] {{
+    font-family: 'Space Mono', monospace !important;
+    font-size: 10px !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: {COLORS['muted']} !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    padding: 12px 20px !important;
+    margin-right: 0 !important;
+}}
+[aria-selected="true"][data-baseweb="tab"] {{
+    color: {COLORS['accent']} !important;
+    border-bottom: 2px solid {COLORS['accent']} !important;
+    background: rgba(0,212,255,0.04) !important;
+}}
 
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #D4AF37 0%, #FF8F00 100%) !important;
-        color: #0A0A1A !important;
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.6) !important;
-        transform: translateY(-2px) !important;
-    }
+/* Sliders */
+[data-testid="stSlider"] > div > div > div > div {{
+    background: {COLORS['accent']} !important;
+}}
 
-    /* Dataframe */
-    .stDataFrame {
-        background: #0A0A1A !important;
-        border: 1px solid #D4AF37 !important;
-        border-radius: 10px !important;
-    }
+/* Selectbox */
+[data-baseweb="select"] > div {{
+    background: {COLORS['surface']} !important;
+    border: 1px solid {COLORS['border2']} !important;
+    border-radius: 2px !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 11px !important;
+    color: {COLORS['text']} !important;
+}}
 
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: linear-gradient(90deg, #4A0E4E 0%, #1A0A2E 100%) !important;
-        color: #D4AF37 !important;
-        border: 1px solid #D4AF37 !important;
-        border-radius: 10px !important;
-    }
+/* Buttons */
+.stButton > button {{
+    background: transparent !important;
+    border: 1px solid {COLORS['accent']} !important;
+    color: {COLORS['accent']} !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 10px !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    border-radius: 2px !important;
+    transition: all 0.2s ease !important;
+}}
+.stButton > button:hover {{
+    background: rgba(0,212,255,0.1) !important;
+}}
 
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        background: #0A0A1A !important;
-        border-bottom: 2px solid #D4AF37 !important;
-    }
+/* Radio */
+[data-baseweb="radio"] span {{
+    font-family: 'Space Mono', monospace !important;
+    font-size: 11px !important;
+    color: {COLORS['text']} !important;
+}}
 
-    .stTabs [data-baseweb="tab"] {
-        color: #FFF8E1 !important;
-        background: #1A0A2E !important;
-        border-radius: 10px 10px 0 0 !important;
-        border: 1px solid #D4AF37 !important;
-    }
+/* Divider */
+hr {{
+    border: none !important;
+    border-top: 1px solid {COLORS['border']} !important;
+    margin: 24px 0 !important;
+}}
 
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(180deg, #D4AF37 0%, #FF8F00 100%) !important;
-        color: #0A0A1A !important;
-        font-weight: bold !important;
-    }
+/* Scrollbar */
+::-webkit-scrollbar {{ width: 6px; background: {COLORS['bg']}; }}
+::-webkit-scrollbar-thumb {{ background: {COLORS['border2']}; border-radius: 3px; }}
 
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-        width: 10px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #0A0A1A;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #D4AF37 0%, #4A0E4E 100%);
-        border-radius: 5px;
-    }
+/* Multiselect */
+[data-baseweb="tag"] {{
+    background: rgba(0,212,255,0.15) !important;
+    border: 1px solid {COLORS['accent2']} !important;
+}}
 
-    /* Info boxes */
-    .stAlert {
-        background: linear-gradient(135deg, #1A0A2E 0%, #4A0E4E 100%) !important;
-        border: 1px solid #D4AF37 !important;
-        border-radius: 15px !important;
-    }
-
-    /* Selectbox, slider */
-    .stSelectbox, .stSlider {
-        background: #0A0A1A !important;
-    }
-
-    .stSelectbox > div > div {
-        background: #1A0A2E !important;
-        border: 1px solid #D4AF37 !important;
-        color: #FFF8E1 !important;
-    }
-
-    /* Divider */
-    hr {
-        border: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent 0%, #D4AF37 50%, transparent 100%);
-        margin: 30px 0;
-    }
+/* Alert/info boxes */
+[data-testid="stAlert"] {{
+    background: rgba(0,212,255,0.06) !important;
+    border: 1px solid {COLORS['border2']} !important;
+    border-left: 3px solid {COLORS['accent']} !important;
+    border-radius: 2px !important;
+    font-family: 'Space Mono', monospace !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# LOAD DATA
-# ============================================================
+
+# ── DATA LOADING ───────────────────────────────────────────────────────────────
 @st.cache_data
-# ============================================================
 def load_data():
-    """Load data from multiple possible locations."""
     import os
     from pathlib import Path
-
-    possible_paths = [
-        'data/spacex_raw.csv',                    # Local / repo root
-        '../data/spacex_raw.csv',                 # If app is in app/ subdirectory
-        'launch-economics/data/spacex_raw.csv',   # Streamlit Cloud mount path
-        str(Path(__file__).parent.parent / 'data' / 'spacex_raw.csv'),  # Relative to script
+    paths = [
+        'data/spacex_raw.csv',
+        '../data/spacex_raw.csv',
+        'launch-economics/data/spacex_raw.csv',
+        str(Path(__file__).parent.parent / 'data' / 'spacex_raw.csv'),
     ]
-
-    for path in possible_paths:
+    for path in paths:
         if os.path.exists(path):
             df = pd.read_csv(path)
             df['Date'] = pd.to_datetime(df['Date'])
             return df
-
-    # If no local file, show error
-    st.error("Data file not found. Please ensure 'data/spacex_raw.csv' exists in the repository.")
+    st.error("Data file not found. Please ensure 'data/spacex_raw.csv' exists.")
     st.stop()
 
 df = load_data()
 
 
-# ============================================================
-# SIDEBAR - THE SACRED NAVIGATION
-# ============================================================
-st.sidebar.markdown("""
-<div style="text-align: center; padding: 20px;">
-    <h1 style="color: #D4AF37; font-size: 28px; margin-bottom: 10px;">⟁</h1>
-    <h2 style="color: #D4AF37; font-size: 18px;">Launch Economics</h2>
-    <p style="color: #FFF8E1; font-size: 12px; font-style: italic;">The Oracle of Reusability</p>
-    <hr style="border-color: #D4AF37; margin: 15px 0;">
+# ── SIDEBAR ────────────────────────────────────────────────────────────────────
+st.sidebar.markdown(f"""
+<div style="padding: 24px 16px 16px; border-bottom: 1px solid {COLORS['border']}; margin-bottom: 20px;">
+    <div style="font-family: 'Space Mono', monospace; font-size: 9px; color: {COLORS['muted']};
+                letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px;">
+        Project Alpha / 2026
+    </div>
+    <div style="font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800;
+                color: {COLORS['white']}; line-height: 1.1; margin-bottom: 4px;">
+        Launch<br>Economics
+    </div>
+    <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: {COLORS['accent']};
+                letter-spacing: 0.05em;">
+        Falcon 9 · 2010–2021
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-<div style="background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%); 
-            padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 20px;">
-    <p style="color: #D4AF37; font-weight: bold; margin-bottom: 10px;">◈ Project Overview</p>
-    <p style="color: #FFF8E1; font-size: 12px; line-height: 1.6;">
-    A sacred analysis of SpaceX Falcon 9 operational economics (2010-2021), 
-    exploring the alchemy of booster reusability, cost transformation, 
-    and the mathematics of orbital liberation.
-    </p>
+st.sidebar.markdown(f"""
+<div style="font-family: 'Space Mono', monospace; font-size: 9px; color: {COLORS['muted']};
+            letter-spacing: 0.15em; text-transform: uppercase; padding: 0 4px; margin-bottom: 8px;">
+    Filters
 </div>
 """, unsafe_allow_html=True)
 
-# Filters
-st.sidebar.markdown("<p style='color: #D4AF37; font-weight: bold;'>◈ Temporal Filters</p>", unsafe_allow_html=True)
 year_range = st.sidebar.slider(
-    "Select Year Range",
+    "Year range",
     min_value=int(df['Year'].min()),
     max_value=int(df['Year'].max()),
     value=(2015, 2021),
-    help="Filter launches by temporal horizon"
 )
 
-st.sidebar.markdown("<p style='color: #D4AF37; font-weight: bold; margin-top: 20px;'>◈ Orbital Filters</p>", unsafe_allow_html=True)
 selected_orbits = st.sidebar.multiselect(
-    "Select Orbits",
+    "Orbit type",
     options=sorted(df['Orbit'].unique()),
     default=sorted(df['Orbit'].unique()),
-    help="Filter by orbital destination"
 )
 
-st.sidebar.markdown("<p style='color: #D4AF37; font-weight: bold; margin-top: 20px;'>◈ Booster State</p>", unsafe_allow_html=True)
 reused_filter = st.sidebar.radio(
-    "Booster Type",
-    options=["All", "New Only", "Reused Only"],
+    "Booster configuration",
+    options=["All", "New only", "Reused only"],
     index=0,
-    help="Filter by booster reusability state"
 )
 
-# Apply filters
-filtered_df = df[
-    (df['Year'] >= year_range[0]) & 
-    (df['Year'] <= year_range[1]) &
-    (df['Orbit'].isin(selected_orbits))
-]
-
-if reused_filter == "New Only":
-    filtered_df = filtered_df[filtered_df['Reused'] == False]
-elif reused_filter == "Reused Only":
-    filtered_df = filtered_df[filtered_df['Reused'] == True]
-
-# ============================================================
-# MAIN CONTENT
-# ============================================================
-st.markdown("""
-<div style="text-align: center; padding: 30px 0;">
-    <h1 style="color: #D4AF37; font-size: 42px; margin-bottom: 10px; text-shadow: 0 0 30px rgba(212, 175, 55, 0.5);">
-        ⟁ LAUNCH ECONOMICS ⟁
-    </h1>
-    <p style="color: #0D7377; font-size: 18px; font-style: italic; letter-spacing: 3px;">
-        The Oracle of Reusability
-    </p>
-    <p style="color: #FFF8E1; font-size: 14px; margin-top: 15px;">
-        A Sacred Analysis of SpaceX Falcon 9 Operational Economics (2010-2021)
-    </p>
-    <hr>
+st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+st.sidebar.markdown(f"""
+<div style="font-family: 'Space Mono', monospace; font-size: 10px;
+            color: {COLORS['muted']}; line-height: 1.8; padding: 0 4px;">
+    Booster reusability analysis across {len(df)} launches.<br>
+    Dataset: IBM / Coursera Applied Data Science Capstone.
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# SACRED METRICS ROW
-# ============================================================
+# Apply filters
+filtered_df = df[
+    (df['Year'] >= year_range[0]) &
+    (df['Year'] <= year_range[1]) &
+    (df['Orbit'].isin(selected_orbits))
+].copy()
+if reused_filter == "New only":
+    filtered_df = filtered_df[filtered_df['Reused'] == False]
+elif reused_filter == "Reused only":
+    filtered_df = filtered_df[filtered_df['Reused'] == True]
+
+
+# ── HEADER ─────────────────────────────────────────────────────────────────────
+st.markdown(f"""
+<div style="padding: 40px 0 32px; border-bottom: 1px solid {COLORS['border']}; margin-bottom: 32px;">
+    <div style="font-family: 'Space Mono', monospace; font-size: 9px; color: {COLORS['accent']};
+                letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 10px;">
+        Aerospace Systems Analysis · SpaceX Falcon 9
+    </div>
+    <h1 style="font-family: 'Syne', sans-serif !important; font-size: 42px !important;
+               font-weight: 800 !important; color: {COLORS['white']} !important;
+               line-height: 1.0 !important; margin: 0 0 12px !important; letter-spacing: -0.03em;">
+        Launch Cost Reduction<br>Through Booster Reusability
+    </h1>
+    <p style="font-family: 'Space Mono', monospace; font-size: 11px; color: {COLORS['muted']};
+              letter-spacing: 0.05em; margin: 0; max-width: 600px; line-height: 1.8;">
+        Quantitative analysis of operational economics across 91 missions (2010–2021).
+        Examines cost-per-kilogram trajectories, success rate convergence, and
+        predictive modeling of booster landing outcomes.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ── KPI METRICS ────────────────────────────────────────────────────────────────
+n = len(filtered_df)
+success_rate = filtered_df['Success'].mean() * 100 if n > 0 else 0
+reused_n = int(filtered_df['Reused'].sum()) if n > 0 else 0
+avg_cost = filtered_df['CostPerKg'].mean() if n > 0 else 0
+total_savings = (filtered_df['CompetitorCost'] - filtered_df['EstimatedCost']).sum() if n > 0 else 0
+
 col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    st.metric(
-        label="⟁ Total Launches",
-        value=f"{len(filtered_df)}",
-        delta=f"{len(filtered_df[filtered_df['Success']==1])} successful" if len(filtered_df) > 0 else "0"
-    )
-
-with col2:
-    success_rate = filtered_df['Success'].mean() * 100 if len(filtered_df) > 0 else 0
-    st.metric(
-        label="◈ Success Rate",
-        value=f"{success_rate:.1f}%",
-        delta=f"{len(filtered_df[filtered_df['Success']==0])} failures" if len(filtered_df) > 0 else "0"
-    )
-
-with col3:
-    reused_count = filtered_df['Reused'].sum() if len(filtered_df) > 0 else 0
-    st.metric(
-        label="✦ Reused Boosters",
-        value=f"{int(reused_count)}",
-        delta=f"{reused_count/len(filtered_df)*100:.1f}% of total" if len(filtered_df) > 0 else "0%"
-    )
-
-with col4:
-    avg_cost = filtered_df['CostPerKg'].mean() if len(filtered_df) > 0 else 0
-    st.metric(
-        label="◉ Avg Cost/kg",
-        value=f"${avg_cost:,.0f}",
-        delta=f"vs ${filtered_df['CompetitorCost'].mean()*1_000_000/filtered_df['PayloadMass'].mean():,.0f} competitor" if len(filtered_df) > 0 else "$0"
-    )
-
-with col5:
-    total_savings = ((filtered_df['CompetitorCost'] - filtered_df['EstimatedCost']).sum()) if len(filtered_df) > 0 else 0
-    st.metric(
-        label="⚛ Total Savings",
-        value=f"${total_savings:.0f}M",
-        delta="vs traditional launch" if len(filtered_df) > 0 else ""
-    )
+col1.metric("Total missions", f"{n}", delta=f"{year_range[0]}–{year_range[1]}")
+col2.metric("Success rate", f"{success_rate:.1f}%", delta=f"{int(filtered_df['Success'].sum())} successful" if n > 0 else "—")
+col3.metric("Reused boosters", f"{reused_n}", delta=f"{reused_n/n*100:.0f}% of set" if n > 0 else "—")
+col4.metric("Avg cost / kg", f"${avg_cost:,.0f}", delta=f"vs ${165_000_000 / filtered_df['PayloadMass'].mean():,.0f} competitor" if n > 0 else "—")
+col5.metric("Cumulative savings", f"${total_savings:.0f}M", delta="vs. expendable baseline")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# ============================================================
-# TABS - THE SACRED CHAMBERS
-# ============================================================
+
+# ── TABS ───────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "⟁ Temporal Oracle", 
-    "◈ Cost Alchemy", 
-    "✦ Reusability Mandala",
-    "◉ Orbital Destiny",
-    "⚛ Predictive Engine"
+    "01 / Temporal Analysis",
+    "02 / Cost Dynamics",
+    "03 / Reusability Economics",
+    "04 / Orbital Performance",
+    "05 / Predictive Model"
 ])
 
-# ============================================================
-# TAB 1: TEMPORAL ORACLE
-# ============================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 1 — TEMPORAL ANALYSIS
+# ─────────────────────────────────────────────────────────────────────────────
 with tab1:
-    st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h2 style="color: #D4AF37;">⟁ The Temporal Oracle ⟁</h2>
-        <p style="color: #0D7377; font-style: italic;">Chronicles of Launch Cadence & Success Evolution</p>
+    st.markdown(f"""
+    <div style="margin: 24px 0 20px;">
+        <div style="font-family:'Space Mono',monospace; font-size:9px; color:{COLORS['accent']};
+                    letter-spacing:0.2em; text-transform:uppercase; margin-bottom:6px;">Section 01</div>
+        <h2 style="font-family:'Syne',sans-serif !important; font-size:22px !important;
+                   font-weight:700 !important; color:{COLORS['white']} !important; margin:0 !important;">
+            Launch Cadence &amp; Success Rate Progression
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([2, 1])
+    yearly = filtered_df.groupby('Year').agg(
+        Launches=('FlightNumber', 'count'),
+        SuccessRate=('Success', 'mean'),
+        ReusedCount=('Reused', 'sum')
+    ).reset_index()
 
-    with col_left:
-        # Timeline chart with Plotly
-        yearly = filtered_df.groupby('Year').agg({
-            'FlightNumber': 'count',
-            'Success': 'mean',
-            'CostPerKg': 'mean',
-            'Reused': 'sum'
-        }).reset_index()
-        yearly.columns = ['Year', 'Launches', 'SuccessRate', 'AvgCostPerKg', 'ReusedCount']
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Bar(
+        x=yearly['Year'], y=yearly['Launches'],
+        name='Missions',
+        marker_color=COLORS['border2'],
+        marker_line_color=COLORS['accent2'],
+        marker_line_width=1,
+        opacity=0.9,
+    ), secondary_y=False)
+    fig.add_trace(go.Scatter(
+        x=yearly['Year'], y=yearly['SuccessRate'] * 100,
+        name='Success rate (%)',
+        mode='lines+markers',
+        line=dict(color=COLORS['accent'], width=2.5),
+        marker=dict(size=7, color=COLORS['accent'], line=dict(color=COLORS['bg'], width=2)),
+    ), secondary_y=True)
 
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.update_layout(**PLOTLY_LAYOUT,
+        title=dict(text='Annual mission volume and booster landing success rate', x=0,
+                   font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+        height=380,
+        showlegend=True,
+    )
+    fig.update_yaxes(title_text='Mission count', secondary_y=False,
+                     title_font=dict(color=COLORS['muted'], size=10, family='Space Mono'))
+    fig.update_yaxes(title_text='Success rate (%)', secondary_y=True,
+                     range=[0, 105],
+                     title_font=dict(color=COLORS['muted'], size=10, family='Space Mono'))
+    st.plotly_chart(fig, use_container_width=True)
 
-        # Launches bars
-        fig.add_trace(
-            go.Bar(
-                x=yearly['Year'], y=yearly['Launches'],
-                name='Launches',
-                marker_color='#FF8F00',
-                marker_line_color='#D4AF37',
-                marker_line_width=2,
-                opacity=0.8,
-                text=yearly['Launches'],
-                textposition='outside',
-                textfont=dict(color='#FFF8E1', size=12)
-            ),
-            secondary_y=False
+    col_a, col_b = st.columns([3, 2])
+    with col_a:
+        # Quarterly heatmap
+        quarterly = filtered_df.groupby(['Year', 'Quarter']).size().reset_index(name='Count')
+        pivot = quarterly.pivot(index='Quarter', columns='Year', values='Count').fillna(0)
+        fig_h = go.Figure(data=go.Heatmap(
+            z=pivot.values,
+            x=pivot.columns.astype(str),
+            y=[f'Q{q}' for q in pivot.index],
+            colorscale=[[0, COLORS['surface']], [0.3, COLORS['border2']],
+                        [0.7, COLORS['accent2']], [1, COLORS['accent']]],
+            showscale=True,
+            text=pivot.values.astype(int),
+            texttemplate='%{text}',
+            textfont=dict(size=11, color=COLORS['white']),
+            hoverongaps=False,
+        ))
+        fig_h.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Quarterly mission distribution', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=260,
+            xaxis=dict(side='bottom'),
         )
+        st.plotly_chart(fig_h, use_container_width=True)
 
-        # Success rate line
-        fig.add_trace(
-            go.Scatter(
-                x=yearly['Year'], y=yearly['SuccessRate']*100,
-                name='Success Rate (%)',
-                mode='lines+markers',
-                line=dict(color='#00BCD4', width=3),
-                marker=dict(size=10, color='#4FC3F7', line=dict(color='#D4AF37', width=2)),
-                fill='tozeroy',
-                fillcolor='rgba(0, 188, 212, 0.2)'
-            ),
-            secondary_y=True
-        )
-
-        fig.update_layout(
-            title=dict(
-                text='Launch Cadence & Success Evolution Over Time',
-                font=dict(color='#D4AF37', size=20, family='Georgia'),
-                x=0.5
-            ),
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            legend=dict(
-                bgcolor='rgba(74, 14, 78, 0.8)',
-                bordercolor='#D4AF37',
-                borderwidth=1,
-                font=dict(color='#FFF8E1')
-            ),
-            xaxis=dict(
-                gridcolor='rgba(212, 175, 55, 0.2)',
-                linecolor='#D4AF37',
-                tickfont=dict(color='#FFF8E1')
-            ),
-            yaxis=dict(
-                title='Number of Launches',
-                gridcolor='rgba(212, 175, 55, 0.2)',
-                linecolor='#D4AF37',
-                tickfont=dict(color='#FFF8E1')
-            ),
-            yaxis2=dict(
-                title='Success Rate (%)',
-                gridcolor='rgba(212, 175, 55, 0.1)',
-                linecolor='#D4AF37',
-                tickfont=dict(color='#FFF8E1'),
-                range=[0, 105]
-            ),
-            hovermode='x unified'
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col_right:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%); 
-                    padding: 20px; border-radius: 15px; border: 1px solid #D4AF37;">
-            <h3 style="color: #D4AF37; margin-bottom: 15px;">◈ Temporal Insights</h3>
-            <ul style="color: #FFF8E1; line-height: 2;">
-                <li><b>2015-2016:</b> The learning curve era. Success rates climbing from experimental to operational.</li>
-                <li><b>2017-2018:</b> Reusability revolution begins. First reflown boosters slash costs dramatically.</li>
-                <li><b>2019-2021:</b> Starlink constellation era. Launch cadence accelerates exponentially.</li>
-            </ul>
-            <p style="color: #0D7377; font-style: italic; margin-top: 15px;">
-            "The temporal oracle reveals that reusability is not merely a cost reduction mechanism, 
-            but a fundamental transformation of the aerospace economic paradigm."
-            </p>
+    with col_b:
+        st.markdown(f"""
+        <div style="background:{COLORS['surface']}; border:1px solid {COLORS['border2']};
+                    border-left:3px solid {COLORS['accent']}; padding:20px 18px;
+                    margin-top:0; font-family:'Space Mono',monospace;">
+            <div style="font-size:9px; color:{COLORS['accent']}; letter-spacing:0.15em;
+                        text-transform:uppercase; margin-bottom:12px;">Key observations</div>
+            <div style="font-size:11px; color:{COLORS['text']}; line-height:2.0;">
+                <span style="color:{COLORS['muted']}">2013–2015</span> &mdash; Early operational phase.
+                Success rates below 50%. Iterative hardware refinement.<br><br>
+                <span style="color:{COLORS['muted']}">2016–2018</span> &mdash; Block 4/5 transition.
+                First booster recoveries. Reliability exceeds 90%.<br><br>
+                <span style="color:{COLORS['muted']}">2019–2021</span> &mdash; Constellation deployment era.
+                Launch frequency triples. Near-unity landing success.
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # Quarterly breakdown
-    st.markdown("<h3 style='color: #D4AF37; text-align: center; margin-top: 30px;'>◈ Quarterly Launch Distribution ◈</h3>", unsafe_allow_html=True)
 
-    quarterly = filtered_df.groupby(['Year', 'Quarter']).size().reset_index(name='Count')
-    quarterly['Period'] = quarterly['Year'].astype(str) + '-Q' + quarterly['Quarter'].astype(str)
-
-    fig_q = go.Figure(data=[
-        go.Bar(
-            x=quarterly['Period'],
-            y=quarterly['Count'],
-            marker_color=quarterly['Count'],
-            marker_colorscale=[[0, '#4A0E4E'], [0.5, '#FF8F00'], [1, '#00BCD4']],
-            marker_line_color='#D4AF37',
-            marker_line_width=1,
-            text=quarterly['Count'],
-            textposition='outside',
-            textfont=dict(color='#FFF8E1')
-        )
-    ])
-
-    fig_q.update_layout(
-        plot_bgcolor='#0A0A1A',
-        paper_bgcolor='#0A0A1A',
-        font=dict(color='#FFF8E1', family='Georgia'),
-        xaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37', tickangle=45),
-        yaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37', title='Launches'),
-        title=dict(text='Quarterly Launch Distribution', font=dict(color='#D4AF37', size=16), x=0.5)
-    )
-
-    st.plotly_chart(fig_q, use_container_width=True)
-
-# ============================================================
-# TAB 2: COST ALCHEMY
-# ============================================================
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 2 — COST DYNAMICS
+# ─────────────────────────────────────────────────────────────────────────────
 with tab2:
-    st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h2 style="color: #D4AF37;">◈ The Cost Alchemy ◈</h2>
-        <p style="color: #0D7377; font-style: italic;">Transmutation of Orbital Economics Through Reusability</p>
+    st.markdown(f"""
+    <div style="margin: 24px 0 20px;">
+        <div style="font-family:'Space Mono',monospace; font-size:9px; color:{COLORS['accent']};
+                    letter-spacing:0.2em; text-transform:uppercase; margin-bottom:6px;">Section 02</div>
+        <h2 style="font-family:'Syne',sans-serif !important; font-size:22px !important;
+                   font-weight:700 !important; color:{COLORS['white']} !important; margin:0 !important;">
+            Cost-Per-Kilogram Dynamics
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([3, 2])
-
-    with col_left:
-        # Scatter: Cost per kg over time
-        fig = px.scatter(
+    col_a, col_b = st.columns([3, 2])
+    with col_a:
+        fig_scatter = px.scatter(
             filtered_df, x='DaysSinceFirst', y='CostPerKg',
-            color='Success', size='PayloadMass',
-            hover_data=['FlightNumber', 'Date', 'Orbit', 'Reused'],
-            color_continuous_scale=['#FF6B6B', '#00BCD4'],
-            title='Cost Per Kilogram: The Descent Curve'
+            color='Success',
+            size='PayloadMass',
+            size_max=18,
+            hover_data=['FlightNumber', 'Orbit', 'Reused', 'ReusedCount'],
+            color_continuous_scale=[[0, COLORS['red']], [1, COLORS['green']]],
+            labels={'DaysSinceFirst': 'Days since first launch',
+                    'CostPerKg': 'Cost per kg (USD)',
+                    'Success': 'Landing success'}
         )
-
-        fig.update_layout(
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            title=dict(font=dict(color='#D4AF37', size=18), x=0.5),
-            xaxis=dict(title='Days Since First Launch', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
-            yaxis=dict(title='Cost Per Kg (USD)', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
+        # Polynomial trend
+        mask = filtered_df[['DaysSinceFirst', 'CostPerKg']].dropna()
+        if len(mask) > 5:
+            z = np.polyfit(mask['DaysSinceFirst'], mask['CostPerKg'], 2)
+            p = np.poly1d(z)
+            xr = np.linspace(mask['DaysSinceFirst'].min(), mask['DaysSinceFirst'].max(), 200)
+            fig_scatter.add_trace(go.Scatter(
+                x=xr, y=p(xr),
+                mode='lines',
+                line=dict(color=COLORS['amber'], width=2, dash='dot'),
+                name='Polynomial trend',
+                showlegend=True
+            ))
+        fig_scatter.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Cost-per-kg decline over operational lifetime (bubble size = payload mass)', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=400,
             coloraxis_colorbar=dict(
-                title='Success',
-                tickvals=[0, 1],
-                ticktext=['Failure', 'Success'],
-                titlefont=dict(color='#FFF8E1'),
-                tickfont=dict(color='#FFF8E1')
+                title=dict(text='Success', font=dict(color=COLORS['muted'], size=10)),
+                tickfont=dict(color=COLORS['muted'], size=9),
+                tickvals=[0, 1], ticktext=['Failure', 'Success'],
             )
         )
+        st.plotly_chart(fig_scatter, use_container_width=True)
 
-        # Add trend line
-        z = np.polyfit(filtered_df['DaysSinceFirst'], filtered_df['CostPerKg'], 2)
-        p = np.poly1d(z)
-        x_line = np.linspace(filtered_df['DaysSinceFirst'].min(), filtered_df['DaysSinceFirst'].max(), 100)
-        fig.add_trace(go.Scatter(
-            x=x_line, y=p(x_line),
-            mode='lines',
-            line=dict(color='#D4AF37', width=3, dash='dash'),
-            name='Trend (Polynomial)',
-            showlegend=True
-        ))
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col_right:
-        # Cost comparison boxes
-        new_cost = filtered_df[filtered_df['Reused']==False]['CostPerKg'].mean() if len(filtered_df[filtered_df['Reused']==False]) > 0 else 0
-        reused_cost = filtered_df[filtered_df['Reused']==True]['CostPerKg'].mean() if len(filtered_df[filtered_df['Reused']==True]) > 0 else 0
-        competitor_cost = filtered_df['CompetitorCost'].mean() * 1_000_000 / filtered_df['PayloadMass'].mean() if len(filtered_df) > 0 else 0
+    with col_b:
+        new_cost = filtered_df[filtered_df['Reused'] == False]['CostPerKg'].mean() if len(filtered_df[filtered_df['Reused'] == False]) > 0 else 0
+        reused_cost = filtered_df[filtered_df['Reused'] == True]['CostPerKg'].mean() if len(filtered_df[filtered_df['Reused'] == True]) > 0 else 0
+        competitor_cost = 165_000_000 / filtered_df['PayloadMass'].mean() if n > 0 else 0
+        reduction = (new_cost - reused_cost) / new_cost * 100 if new_cost > 0 else 0
+        vs_comp = (competitor_cost - reused_cost) / competitor_cost * 100 if competitor_cost > 0 else 0
 
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%); 
-                    padding: 20px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 20px;">
-            <h3 style="color: #D4AF37; margin-bottom: 15px;">◉ Cost Comparison</h3>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                <div style="text-align: center; flex: 1;">
-                    <p style="color: #FF6B6B; font-size: 12px; margin-bottom: 5px;">New Booster</p>
-                    <p style="color: #FFF8E1; font-size: 24px; font-weight: bold;">${new_cost:,.0f}</p>
-                    <p style="color: #FFF8E1; font-size: 10px;">per kg</p>
+        <div style="background:{COLORS['surface']}; border:1px solid {COLORS['border2']};
+                    padding:22px 18px; font-family:'Space Mono',monospace; margin-bottom:16px;">
+            <div style="font-size:9px; color:{COLORS['accent']}; letter-spacing:0.15em;
+                        text-transform:uppercase; margin-bottom:16px;">Cost benchmarking (USD/kg)</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                    <div style="font-size:9px; color:{COLORS['muted']}; margin-bottom:2px;">New booster</div>
+                    <div style="font-size:22px; font-weight:700; color:{COLORS['red']};
+                                font-family:'Syne',sans-serif;">${new_cost:,.0f}</div>
                 </div>
-                <div style="text-align: center; flex: 1;">
-                    <p style="color: #00BCD4; font-size: 12px; margin-bottom: 5px;">Reused Booster</p>
-                    <p style="color: #FFF8E1; font-size: 24px; font-weight: bold;">${reused_cost:,.0f}</p>
-                    <p style="color: #FFF8E1; font-size: 10px;">per kg</p>
+                <div style="height:1px; background:{COLORS['border']};"></div>
+                <div>
+                    <div style="font-size:9px; color:{COLORS['muted']}; margin-bottom:2px;">Reused booster</div>
+                    <div style="font-size:22px; font-weight:700; color:{COLORS['green']};
+                                font-family:'Syne',sans-serif;">${reused_cost:,.0f}</div>
                 </div>
-                <div style="text-align: center; flex: 1;">
-                    <p style="color: #D4AF37; font-size: 12px; margin-bottom: 5px;">Competitor Avg</p>
-                    <p style="color: #FFF8E1; font-size: 24px; font-weight: bold;">${competitor_cost:,.0f}</p>
-                    <p style="color: #FFF8E1; font-size: 10px;">per kg</p>
+                <div style="height:1px; background:{COLORS['border']};"></div>
+                <div>
+                    <div style="font-size:9px; color:{COLORS['muted']}; margin-bottom:2px;">Competitor baseline</div>
+                    <div style="font-size:22px; font-weight:700; color:{COLORS['amber']};
+                                font-family:'Syne',sans-serif;">${competitor_cost:,.0f}</div>
                 </div>
             </div>
-            <hr style="border-color: #D4AF37; margin: 15px 0;">
-            <p style="color: #0D7377; font-style: italic; text-align: center;">
-            Savings with reuse: <b style="color: #D4AF37;">{((new_cost - reused_cost)/new_cost*100):.1f}%</b> reduction
-            </p>
-            <p style="color: #0D7377; font-style: italic; text-align: center;">
-            vs Competitors: <b style="color: #D4AF37;">{((competitor_cost - reused_cost)/competitor_cost*100):.1f}%</b> reduction
-            </p>
+            <div style="margin-top:18px; padding-top:16px; border-top:1px solid {COLORS['border']};">
+                <div style="font-size:10px; color:{COLORS['text']}; line-height:2.0;">
+                    Reuse vs. new: <span style="color:{COLORS['green']}; font-weight:700;">&minus;{reduction:.1f}%</span><br>
+                    Reuse vs. competitor: <span style="color:{COLORS['green']}; font-weight:700;">&minus;{vs_comp:.1f}%</span>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Savings over time
-        filtered_sorted = filtered_df.sort_values('Date')
-        filtered_sorted['CumulativeSavings'] = (filtered_sorted['CompetitorCost'] - filtered_sorted['EstimatedCost']).cumsum()
-
-        fig_savings = go.Figure(data=[
-            go.Scatter(
-                x=filtered_sorted['Date'],
-                y=filtered_sorted['CumulativeSavings'],
-                mode='lines',
-                fill='tozeroy',
-                line=dict(color='#D4AF37', width=3),
-                fillcolor='rgba(212, 175, 55, 0.2)',
-                name='Cumulative Savings'
-            )
-        ])
-
-        fig_savings.update_layout(
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            title=dict(text='Cumulative Economic Liberation', font=dict(color='#D4AF37', size=16), x=0.5),
-            xaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
-            yaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37', title='Savings (Million USD)')
+        # Cumulative savings line
+        sorted_df = filtered_df.sort_values('Date')
+        sorted_df['CumSavings'] = (sorted_df['CompetitorCost'] - sorted_df['EstimatedCost']).cumsum()
+        fig_sav = go.Figure(go.Scatter(
+            x=sorted_df['Date'], y=sorted_df['CumSavings'],
+            mode='lines',
+            fill='tozeroy',
+            line=dict(color=COLORS['accent'], width=2),
+            fillcolor='rgba(0,212,255,0.07)',
+            name='Cumulative savings (M USD)'
+        ))
+        fig_sav.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Cumulative savings vs. expendable baseline', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=220,
+            showlegend=False,
         )
+        fig_sav.update_yaxes(title_text='Savings (M USD)',
+                             title_font=dict(color=COLORS['muted'], size=10))
+        st.plotly_chart(fig_sav, use_container_width=True)
 
-        st.plotly_chart(fig_savings, use_container_width=True)
 
-# ============================================================
-# TAB 3: REUSABILITY MANDALA
-# ============================================================
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 3 — REUSABILITY ECONOMICS
+# ─────────────────────────────────────────────────────────────────────────────
 with tab3:
-    st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h2 style="color: #D4AF37;">✦ The Reusability Mandala ✦</h2>
-        <p style="color: #0D7377; font-style: italic;">Sacred Geometry of Booster Lifecycle Economics</p>
+    st.markdown(f"""
+    <div style="margin: 24px 0 20px;">
+        <div style="font-family:'Space Mono',monospace; font-size:9px; color:{COLORS['accent']};
+                    letter-spacing:0.2em; text-transform:uppercase; margin-bottom:6px;">Section 03</div>
+        <h2 style="font-family:'Syne',sans-serif !important; font-size:22px !important;
+                   font-weight:700 !important; color:{COLORS['white']} !important; margin:0 !important;">
+            Booster Reusability — Lifecycle Economics
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([2, 3])
+    reuse_agg = filtered_df.groupby('ReusedCount').agg(
+        Flights=('FlightNumber', 'count'),
+        SuccessRate=('Success', 'mean'),
+        AvgCostPerKg=('CostPerKg', 'mean'),
+        AvgPayload=('PayloadMass', 'mean'),
+    ).reset_index()
 
-    with col_left:
-        # Reuse count distribution
-        reuse_dist = filtered_df['ReusedCount'].value_counts().sort_index()
+    col_a, col_b, col_c = st.columns(3)
 
-        fig_reuse = go.Figure(data=[
-            go.Bar(
-                x=reuse_dist.index,
-                y=reuse_dist.values,
-                marker_color=reuse_dist.values,
-                marker_colorscale=[[0, '#4A0E4E'], [0.5, '#FF8F00'], [1, '#00BCD4']],
-                marker_line_color='#D4AF37',
-                marker_line_width=2,
-                text=reuse_dist.values,
-                textposition='outside',
-                textfont=dict(color='#FFF8E1')
-            )
-        ])
-
-        fig_reuse.update_layout(
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            title=dict(text='Distribution by Reuse Count', font=dict(color='#D4AF37', size=16), x=0.5),
-            xaxis=dict(title='Times Reused', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
-            yaxis=dict(title='Number of Flights', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37')
+    with col_a:
+        fig1 = go.Figure(go.Bar(
+            x=reuse_agg['ReusedCount'],
+            y=reuse_agg['Flights'],
+            marker_color=COLORS['border2'],
+            marker_line_color=COLORS['accent2'],
+            marker_line_width=1,
+            text=reuse_agg['Flights'],
+            textposition='outside',
+            textfont=dict(size=10, color=COLORS['muted']),
+        ))
+        fig1.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Mission count by reuse iteration', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=300, showlegend=False,
+            xaxis=dict(title='Reuse count', title_font=dict(size=10)),
+            yaxis=dict(title='Missions', title_font=dict(size=10)),
         )
+        st.plotly_chart(fig1, use_container_width=True)
 
-        st.plotly_chart(fig_reuse, use_container_width=True)
-
-        # Success by reuse
-        reuse_success = filtered_df.groupby('ReusedCount').agg({
-            'Success': 'mean',
-            'FlightNumber': 'count'
-        }).reset_index()
-
-        fig_rs = go.Figure(data=[
-            go.Scatter(
-                x=reuse_success['ReusedCount'],
-                y=reuse_success['Success']*100,
-                mode='lines+markers',
-                line=dict(color='#00BCD4', width=3),
-                marker=dict(size=15, color='#4FC3F7', line=dict(color='#D4AF37', width=2)),
-                name='Success Rate'
-            )
-        ])
-
-        fig_rs.update_layout(
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            title=dict(text='Success Rate by Reuse Count', font=dict(color='#D4AF37', size=16), x=0.5),
-            xaxis=dict(title='Times Reused', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
-            yaxis=dict(title='Success Rate (%)', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37', range=[0, 105])
+    with col_b:
+        fig2 = go.Figure(go.Scatter(
+            x=reuse_agg['ReusedCount'],
+            y=reuse_agg['SuccessRate'] * 100,
+            mode='lines+markers',
+            line=dict(color=COLORS['accent'], width=2.5),
+            marker=dict(size=8, color=COLORS['accent'],
+                        line=dict(color=COLORS['bg'], width=2)),
+            fill='tozeroy',
+            fillcolor='rgba(0,212,255,0.06)',
+        ))
+        fig2.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Success rate by reuse iteration', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=300, showlegend=False,
+            yaxis=dict(title='Success rate (%)', range=[0, 105], title_font=dict(size=10)),
+            xaxis=dict(title='Reuse count', title_font=dict(size=10)),
         )
+        st.plotly_chart(fig2, use_container_width=True)
 
-        st.plotly_chart(fig_rs, use_container_width=True)
+    with col_c:
+        fig3 = go.Figure(go.Scatter(
+            x=reuse_agg['ReusedCount'],
+            y=reuse_agg['AvgCostPerKg'],
+            mode='lines+markers',
+            line=dict(color=COLORS['amber'], width=2.5),
+            marker=dict(size=8, color=COLORS['amber'],
+                        line=dict(color=COLORS['bg'], width=2)),
+            fill='tozeroy',
+            fillcolor='rgba(245,166,35,0.06)',
+        ))
+        fig3.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Avg cost per kg by reuse iteration', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=300, showlegend=False,
+            yaxis=dict(title='Cost / kg (USD)', title_font=dict(size=10)),
+            xaxis=dict(title='Reuse count', title_font=dict(size=10)),
+        )
+        st.plotly_chart(fig3, use_container_width=True)
 
-    with col_right:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%); 
-                    padding: 25px; border-radius: 15px; border: 1px solid #D4AF37;">
-            <h3 style="color: #D4AF37; margin-bottom: 20px;">✦ The Sacred Doctrine of Reuse</h3>
+    # Block version analysis
+    st.markdown(f"""
+    <div style="font-family:'Space Mono',monospace; font-size:9px; color:{COLORS['muted']};
+                letter-spacing:0.15em; text-transform:uppercase; margin:24px 0 12px;">
+        Block version performance matrix
+    </div>
+    """, unsafe_allow_html=True)
 
-            <p style="color: #FFF8E1; line-height: 2; margin-bottom: 15px;">
-            <b style="color: #D4AF37;">1. The First Principle:</b> Each reuse cycle reduces marginal cost 
-            by amortizing manufacturing capital across multiple missions. The booster becomes not a 
-            consumable, but a <i>capital asset</i> with depreciable life.
-            </p>
+    block_agg = filtered_df.groupby('Block').agg(
+        Flights=('FlightNumber', 'count'),
+        SuccessRate=('Success', 'mean'),
+        AvgCostPerKg=('CostPerKg', 'mean'),
+    ).reset_index().dropna(subset=['Block'])
 
-            <p style="color: #FFF8E1; line-height: 2; margin-bottom: 15px;">
-            <b style="color: #D4AF37;">2. The Learning Curve:</b> Success rates improve with each reuse 
-            iteration, suggesting operational refinement and predictive maintenance maturation.
-            </p>
+    fig_block = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_block.add_trace(go.Bar(
+        x=block_agg['Block'].astype(str),
+        y=block_agg['Flights'],
+        name='Missions',
+        marker_color=COLORS['border2'],
+        marker_line_color=COLORS['accent2'],
+        marker_line_width=1,
+    ), secondary_y=False)
+    fig_block.add_trace(go.Scatter(
+        x=block_agg['Block'].astype(str),
+        y=block_agg['SuccessRate'] * 100,
+        name='Success rate (%)',
+        mode='lines+markers',
+        line=dict(color=COLORS['accent'], width=2.5),
+        marker=dict(size=9, color=COLORS['accent'],
+                    line=dict(color=COLORS['bg'], width=2)),
+    ), secondary_y=True)
+    fig_block.update_layout(**PLOTLY_LAYOUT,
+        title=dict(text='Block-version generational reliability improvement', x=0,
+                   font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+        height=320,
+    )
+    fig_block.update_yaxes(title_text='Mission count', secondary_y=False,
+                           title_font=dict(color=COLORS['muted'], size=10))
+    fig_block.update_yaxes(title_text='Success rate (%)', secondary_y=True,
+                           range=[0, 105],
+                           title_font=dict(color=COLORS['muted'], size=10))
+    st.plotly_chart(fig_block, use_container_width=True)
 
-            <p style="color: #FFF8E1; line-height: 2; margin-bottom: 15px;">
-            <b style="color: #D4AF37;">3. The Economic Threshold:</b> Beyond the 5th reuse, cost per 
-            kilogram approaches an asymptotic minimum, fundamentally restructuring the economics 
-            of space access.
-            </p>
 
-            <hr style="border-color: #D4AF37; margin: 20px 0;">
-
-            <p style="color: #0D7377; font-style: italic; text-align: center; font-size: 14px;">
-            "The booster that flies ten times is not merely ten times cheaper—<br>
-            it is the manifestation of a new economic ontology."
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ============================================================
-# TAB 4: ORBITAL DESTINY
-# ============================================================
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 4 — ORBITAL PERFORMANCE
+# ─────────────────────────────────────────────────────────────────────────────
 with tab4:
-    st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h2 style="color: #D4AF37;">◉ Orbital Destiny ◉</h2>
-        <p style="color: #0D7377; font-style: italic;">Success Patterns Across the Celestial Sphere</p>
+    st.markdown(f"""
+    <div style="margin: 24px 0 20px;">
+        <div style="font-family:'Space Mono',monospace; font-size:9px; color:{COLORS['accent']};
+                    letter-spacing:0.2em; text-transform:uppercase; margin-bottom:6px;">Section 04</div>
+        <h2 style="font-family:'Syne',sans-serif !important; font-size:22px !important;
+                   font-weight:700 !important; color:{COLORS['white']} !important; margin:0 !important;">
+            Orbital Regime &amp; Launch Site Performance
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns(2)
+    col_a, col_b = st.columns(2)
 
-    with col_left:
-        # Orbit success rates
-        orbit_stats = filtered_df.groupby('Orbit').agg({
-            'Success': 'mean',
-            'FlightNumber': 'count',
-            'PayloadMass': 'mean',
-            'CostPerKg': 'mean'
-        }).reset_index()
-        orbit_stats = orbit_stats.sort_values('Success', ascending=True)
+    with col_a:
+        orbit_stats = filtered_df.groupby('Orbit').agg(
+            Flights=('FlightNumber', 'count'),
+            SuccessRate=('Success', 'mean'),
+            AvgPayload=('PayloadMass', 'mean'),
+            AvgCost=('CostPerKg', 'mean'),
+        ).reset_index().sort_values('SuccessRate')
 
-        colors_orbit = ['#FF6B6B' if x < 0.8 else '#FF8F00' if x < 0.9 else '#00BCD4' 
-                       for x in orbit_stats['Success']]
+        bar_colors = [COLORS['red'] if x < 0.8 else COLORS['amber'] if x < 0.9 else COLORS['green']
+                      for x in orbit_stats['SuccessRate']]
 
-        fig_orbit = go.Figure(data=[
-            go.Bar(
-                y=orbit_stats['Orbit'],
-                x=orbit_stats['Success']*100,
-                orientation='h',
-                marker_color=colors_orbit,
-                marker_line_color='#D4AF37',
-                marker_line_width=2,
-                text=[f"{x*100:.1f}% (n={y})" for x, y in zip(orbit_stats['Success'], orbit_stats['FlightNumber'])],
-                textposition='outside',
-                textfont=dict(color='#FFF8E1')
-            )
-        ])
-
-        fig_orbit.update_layout(
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            title=dict(text='Success Rate by Orbital Destination', font=dict(color='#D4AF37', size=16), x=0.5),
-            xaxis=dict(title='Success Rate (%)', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37', range=[0, 105]),
-            yaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37')
+        fig_orb = go.Figure(go.Bar(
+            y=orbit_stats['Orbit'],
+            x=orbit_stats['SuccessRate'] * 100,
+            orientation='h',
+            marker_color=bar_colors,
+            marker_line_color=COLORS['bg'],
+            marker_line_width=1,
+            text=[f"{x*100:.0f}% · n={y}" for x, y in zip(orbit_stats['SuccessRate'], orbit_stats['Flights'])],
+            textposition='outside',
+            textfont=dict(size=10, color=COLORS['muted'], family='Space Mono'),
+        ))
+        fig_orb.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Landing success rate by orbital regime', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=380, showlegend=False,
+            xaxis=dict(title='Success rate (%)', range=[0, 115], title_font=dict(size=10)),
         )
+        st.plotly_chart(fig_orb, use_container_width=True)
 
-        st.plotly_chart(fig_orbit, use_container_width=True)
-
-    with col_right:
-        # Payload mass by orbit
-        fig_payload = go.Figure()
-
-        for orbit in sorted(filtered_df['Orbit'].unique()):
-            orbit_data = filtered_df[filtered_df['Orbit'] == orbit]
-            fig_payload.add_trace(go.Box(
-                y=orbit_data['PayloadMass'],
+    with col_b:
+        fig_box = go.Figure()
+        palette = [COLORS['accent'], COLORS['amber'], COLORS['green'], COLORS['red'],
+                   COLORS['accent2'], '#B983FF', '#FF83B9', '#83FFB9']
+        for i, orbit in enumerate(sorted(filtered_df['Orbit'].unique())):
+            odata = filtered_df[filtered_df['Orbit'] == orbit]
+            fig_box.add_trace(go.Box(
+                y=odata['PayloadMass'],
                 name=orbit,
-                boxpoints='all',
-                jitter=0.3,
-                pointpos=-1.8,
-                marker=dict(color='#D4AF37', size=6),
-                line=dict(color='#00BCD4', width=2),
-                fillcolor='rgba(0, 188, 212, 0.2)'
+                boxpoints='outliers',
+                marker=dict(color=palette[i % len(palette)], size=4),
+                line=dict(color=palette[i % len(palette)], width=1.5),
+                fillcolor=f"rgba({int(palette[i%len(palette)][1:3],16)},"
+                           f"{int(palette[i%len(palette)][3:5],16)},"
+                           f"{int(palette[i%len(palette)][5:7],16)},0.15)",
             ))
-
-        fig_payload.update_layout(
-            plot_bgcolor='#0A0A1A',
-            paper_bgcolor='#0A0A1A',
-            font=dict(color='#FFF8E1', family='Georgia'),
-            title=dict(text='Payload Mass Distribution by Orbit', font=dict(color='#D4AF37', size=16), x=0.5),
-            yaxis=dict(title='Payload Mass (kg)', gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
-            xaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37')
+        fig_box.update_layout(**PLOTLY_LAYOUT,
+            title=dict(text='Payload mass distribution by orbital regime', x=0,
+                       font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+            height=380, showlegend=False,
+            yaxis=dict(title='Payload mass (kg)', title_font=dict(size=10)),
         )
+        st.plotly_chart(fig_box, use_container_width=True)
 
-        st.plotly_chart(fig_payload, use_container_width=True)
-
-    # Launch site map
-    st.markdown("<h3 style='color: #D4AF37; text-align: center; margin-top: 30px;'>◈ The Three Sacred Temples ◈</h3>", unsafe_allow_html=True)
-
-    site_stats = filtered_df.groupby('LaunchSite').agg({
-        'FlightNumber': 'count',
-        'Success': 'mean',
-        'Latitude': 'first',
-        'Longitude': 'first'
-    }).reset_index()
+    # Map
+    site_stats = filtered_df.groupby('LaunchSite').agg(
+        Flights=('FlightNumber', 'count'),
+        SuccessRate=('Success', 'mean'),
+        Lat=('Latitude', 'first'),
+        Lon=('Longitude', 'first'),
+    ).reset_index()
 
     fig_map = px.scatter_geo(
-        site_stats,
-        lat='Latitude',
-        lon='Longitude',
-        size='FlightNumber',
-        color='Success',
+        site_stats, lat='Lat', lon='Lon',
+        size='Flights', color='SuccessRate',
         hover_name='LaunchSite',
-        hover_data=['FlightNumber', 'Success'],
-        color_continuous_scale=['#FF6B6B', '#FF8F00', '#00BCD4'],
+        hover_data={'Flights': True, 'SuccessRate': ':.1%', 'Lat': False, 'Lon': False},
+        color_continuous_scale=[[0, COLORS['red']], [0.5, COLORS['amber']], [1, COLORS['green']]],
+        range_color=[0, 1],
         projection='natural earth',
-        title='Launch Sites: The Sacred Geography'
     )
-
     fig_map.update_layout(
         geo=dict(
-            bgcolor='#0A0A1A',
-            landcolor='#1B4332',
-            oceancolor='#0A0A1A',
-            coastlinecolor='#D4AF37',
-            countrycolor='#D4AF37',
-            showland=True,
-            showocean=True,
-            showcoastlines=True,
-            showcountries=True,
-            countrywidth=0.5,
-            coastlinewidth=0.5
+            bgcolor=COLORS['bg'],
+            landcolor='#0A1628',
+            oceancolor=COLORS['bg'],
+            coastlinecolor=COLORS['border2'],
+            countrycolor=COLORS['border'],
+            showland=True, showocean=True,
+            showcoastlines=True, showcountries=True,
         ),
-        paper_bgcolor='#0A0A1A',
-        font=dict(color='#FFF8E1', family='Georgia'),
-        title=dict(font=dict(color='#D4AF37', size=16), x=0.5)
+        paper_bgcolor=COLORS['surface'],
+        font=dict(color=COLORS['text'], family='Space Mono', size=11),
+        title=dict(text='Launch site geographic distribution and success rates', x=0,
+                   font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+        height=340,
+        coloraxis_colorbar=dict(
+            title=dict(text='Success', font=dict(color=COLORS['muted'], size=10)),
+            tickfont=dict(color=COLORS['muted'], size=9),
+        ),
+        margin=dict(l=0, r=0, t=40, b=0),
     )
-
     st.plotly_chart(fig_map, use_container_width=True)
 
-# ============================================================
-# TAB 5: PREDICTIVE ENGINE
-# ============================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 5 — PREDICTIVE MODEL
+# ─────────────────────────────────────────────────────────────────────────────
 with tab5:
-    st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h2 style="color: #D4AF37;">⚛ The Predictive Engine ⚛</h2>
-        <p style="color: #0D7377; font-style: italic;">Machine Learning Oracle for Mission Prognostication</p>
+    st.markdown(f"""
+    <div style="margin: 24px 0 20px;">
+        <div style="font-family:'Space Mono',monospace; font-size:9px; color:{COLORS['accent']};
+                    letter-spacing:0.2em; text-transform:uppercase; margin-bottom:6px;">Section 05</div>
+        <h2 style="font-family:'Syne',sans-serif !important; font-size:22px !important;
+                   font-weight:700 !important; color:{COLORS['white']} !important; margin:0 !important;">
+            Random Forest Classifier — Landing Success Prediction
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.model_selection import train_test_split
-    from sklearn.metrics import classification_report, confusion_matrix
-    import plotly.figure_factory as ff
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-    # Prepare features
-    feature_df = filtered_df.copy()
-    feature_df['Orbit_LEO'] = (feature_df['Orbit'] == 'LEO').astype(int)
-    feature_df['Orbit_GTO'] = (feature_df['Orbit'] == 'GTO').astype(int)
-    feature_df['Orbit_ISS'] = (feature_df['Orbit'] == 'ISS').astype(int)
-    feature_df['Orbit_PO'] = (feature_df['Orbit'] == 'PO').astype(int)
-    feature_df['Orbit_SSO'] = (feature_df['Orbit'] == 'SSO').astype(int)
-    feature_df['Orbit_MEO'] = (feature_df['Orbit'] == 'MEO').astype(int)
+    feat_df = filtered_df.copy()
+    for orb in ['LEO', 'GTO', 'ISS', 'PO', 'SSO', 'MEO']:
+        feat_df[f'Orbit_{orb}'] = (feat_df['Orbit'] == orb).astype(int)
 
-    features = ['PayloadMass', 'ReusedCount', 'Block', 'DaysSinceFirst', 
+    features = ['PayloadMass', 'ReusedCount', 'Block', 'DaysSinceFirst',
                 'Orbit_LEO', 'Orbit_GTO', 'Orbit_ISS', 'Orbit_PO', 'Orbit_SSO', 'Orbit_MEO']
-    X = feature_df[features]
-    y = feature_df['Success']
+    X = feat_df[features].fillna(0)
+    y = feat_df['Success']
 
     if len(X) > 10 and y.nunique() > 1:
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-
-        model = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.3, random_state=42, stratify=y)
+        model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        col_left, col_right = st.columns([2, 3])
+        acc = accuracy_score(y_test, y_pred)
+        prec = precision_score(y_test, y_pred, zero_division=0)
+        rec = recall_score(y_test, y_pred, zero_division=0)
+        f1 = f1_score(y_test, y_pred, zero_division=0)
 
-        with col_left:
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%); 
-                        padding: 20px; border-radius: 15px; border: 1px solid #D4AF37;">
-                <h3 style="color: #D4AF37; margin-bottom: 15px;">◈ Model Performance</h3>
-                <p style="color: #FFF8E1; line-height: 2;">
-                <b>Algorithm:</b> Random Forest Classifier<br>
-                <b>Training Samples:</b> {}<br>
-                <b>Test Samples:</b> {}<br>
-                <b>Accuracy:</b> {:.1%}<br>
-                <b>Precision:</b> {:.1%}<br>
-                <b>Recall:</b> {:.1%}<br>
-                <b>F1-Score:</b> {:.1%}
-                </p>
+        col_a, col_b = st.columns([2, 3])
+
+        with col_a:
+            st.markdown(f"""
+            <div style="background:{COLORS['surface']}; border:1px solid {COLORS['border2']};
+                        padding:20px 18px; font-family:'Space Mono',monospace; margin-bottom:16px;">
+                <div style="font-size:9px; color:{COLORS['accent']}; letter-spacing:0.15em;
+                            text-transform:uppercase; margin-bottom:14px;">Model metrics</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:6px 0;">Algorithm</td>
+                        <td style="color:{COLORS['white']}; font-size:10px; text-align:right;">Random Forest</td>
+                    </tr>
+                    <tr>
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:6px 0;">Training samples</td>
+                        <td style="color:{COLORS['white']}; font-size:10px; text-align:right;">{len(X_train)}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:6px 0;">Test samples</td>
+                        <td style="color:{COLORS['white']}; font-size:10px; text-align:right;">{len(X_test)}</td>
+                    </tr>
+                    <tr style="border-top:1px solid {COLORS['border']};">
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:8px 0 4px;">Accuracy</td>
+                        <td style="color:{COLORS['accent']}; font-size:14px; font-weight:700;
+                                   text-align:right; font-family:'Syne',sans-serif;">{acc:.1%}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:4px 0;">Precision</td>
+                        <td style="color:{COLORS['text']}; font-size:12px; text-align:right;">{prec:.1%}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:4px 0;">Recall</td>
+                        <td style="color:{COLORS['text']}; font-size:12px; text-align:right;">{rec:.1%}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:{COLORS['muted']}; font-size:10px; padding:4px 0;">F1-score</td>
+                        <td style="color:{COLORS['text']}; font-size:12px; text-align:right;">{f1:.1%}</td>
+                    </tr>
+                </table>
             </div>
-            """.format(
-                len(X_train), len(X_test),
-                (y_pred == y_test).mean(),
-                (y_pred[y_test==1] == 1).mean() if sum(y_test==1) > 0 else 0,
-                (y_pred[y_test==1] == 1).sum() / y_test.sum() if y_test.sum() > 0 else 0,
-                2 * ((y_pred[y_test==1] == 1).sum() / y_test.sum()) * ((y_pred[y_test==1] == 1).mean()) / 
-                (((y_pred[y_test==1] == 1).sum() / y_test.sum()) + ((y_pred[y_test==1] == 1).mean())) 
-                if y_test.sum() > 0 and (y_pred[y_test==1] == 1).mean() > 0 else 0
-            ), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
             # Feature importance
-            importance = pd.DataFrame({
+            imp_df = pd.DataFrame({
                 'Feature': features,
                 'Importance': model.feature_importances_
             }).sort_values('Importance', ascending=True)
 
-            fig_imp = go.Figure(data=[
-                go.Bar(
-                    y=importance['Feature'],
-                    x=importance['Importance'],
-                    orientation='h',
-                    marker_color=importance['Importance'],
-                    marker_colorscale=[[0, '#4A0E4E'], [0.5, '#FF8F00'], [1, '#00BCD4']],
-                    marker_line_color='#D4AF37',
-                    marker_line_width=1,
-                    text=[f"{x:.3f}" for x in importance['Importance']],
-                    textposition='outside',
-                    textfont=dict(color='#FFF8E1')
-                )
-            ])
-
-            fig_imp.update_layout(
-                plot_bgcolor='#0A0A1A',
-                paper_bgcolor='#0A0A1A',
-                font=dict(color='#FFF8E1', family='Georgia'),
-                title=dict(text='Feature Importance', font=dict(color='#D4AF37', size=14), x=0.5),
-                xaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37'),
-                yaxis=dict(gridcolor='rgba(212, 175, 55, 0.2)', linecolor='#D4AF37')
+            imp_colors = [COLORS['accent'] if v > 0.1 else COLORS['border2']
+                          for v in imp_df['Importance']]
+            fig_imp = go.Figure(go.Bar(
+                y=imp_df['Feature'],
+                x=imp_df['Importance'],
+                orientation='h',
+                marker_color=imp_colors,
+                marker_line_width=0,
+                text=[f"{x:.3f}" for x in imp_df['Importance']],
+                textposition='outside',
+                textfont=dict(size=9, color=COLORS['muted'], family='Space Mono'),
+            ))
+            fig_imp.update_layout(**PLOTLY_LAYOUT,
+                title=dict(text='Feature importance (Gini impurity)', x=0,
+                           font=dict(color=COLORS['muted'], size=11, family='Space Mono')),
+                height=300, showlegend=False,
+                xaxis=dict(title='Importance', title_font=dict(size=10)),
             )
-
             st.plotly_chart(fig_imp, use_container_width=True)
 
-        with col_right:
-            # Interactive prediction
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, #4A0E4E 0%, #1A0A2E 100%); 
-                        padding: 20px; border-radius: 15px; border: 1px solid #D4AF37;">
-                <h3 style="color: #D4AF37; margin-bottom: 15px;">⚛ Mission Prognosticator</h3>
-                <p style="color: #FFF8E1; margin-bottom: 20px;">
-                Configure mission parameters to receive the oracle's prediction.
-                </p>
+        with col_b:
+            st.markdown(f"""
+            <div style="background:{COLORS['surface']}; border:1px solid {COLORS['border2']};
+                        border-left:3px solid {COLORS['accent']};
+                        padding:18px; font-family:'Space Mono',monospace; margin-bottom:20px;">
+                <div style="font-size:9px; color:{COLORS['accent']}; letter-spacing:0.15em;
+                            text-transform:uppercase; margin-bottom:10px;">Mission parameter input</div>
+                <div style="font-size:10px; color:{COLORS['muted']};">
+                    Configure the parameters below to generate a landing success probability estimate.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
-            col_p1, col_p2, col_p3 = st.columns(3)
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                pred_payload = st.slider("Payload mass (kg)", 0, 16000, 5000, 100)
+                pred_reuse = st.slider("Reuse count", 0, 10, 2, 1)
+            with c2:
+                pred_block = st.slider("Block version", 1, 5, 4, 1)
+                pred_days = st.slider("Days since first launch", 0, 4000, 2000, 100)
+            with c3:
+                pred_orbit = st.selectbox("Target orbit", ['LEO', 'GTO', 'ISS', 'PO', 'SSO', 'MEO'])
 
-            with col_p1:
-                pred_payload = st.slider("Payload Mass (kg)", 0, 16000, 5000, 100)
-                pred_reuse = st.slider("Reuse Count", 0, 10, 2, 1)
-
-            with col_p2:
-                pred_block = st.slider("Block Version", 1, 5, 4, 1)
-                pred_days = st.slider("Days Since First Launch", 0, 4000, 2000, 100)
-
-            with col_p3:
-                pred_orbit = st.selectbox("Orbital Destination", 
-                                         ['LEO', 'GTO', 'ISS', 'PO', 'SSO', 'MEO'])
-
-            # Create prediction input
             pred_input = np.zeros(len(features))
             pred_input[0] = pred_payload
             pred_input[1] = pred_reuse
             pred_input[2] = pred_block
             pred_input[3] = pred_days
+            orbit_idx = {'LEO': 4, 'GTO': 5, 'ISS': 6, 'PO': 7, 'SSO': 8, 'MEO': 9}
+            pred_input[orbit_idx[pred_orbit]] = 1
 
-            orbit_map = {'LEO': 4, 'GTO': 5, 'ISS': 6, 'PO': 7, 'SSO': 8, 'MEO': 9}
-            pred_input[orbit_map[pred_orbit]] = 1
-
-            pred_proba = model.predict_proba([pred_input])[0]
+            proba = model.predict_proba([pred_input])[0]
             pred_class = model.predict([pred_input])[0]
+            confidence = proba[1] * 100
 
-            st.markdown("<hr>", unsafe_allow_html=True)
+            bar_w = int(confidence)
+            bar_color = COLORS['green'] if pred_class == 1 else COLORS['red']
+            label = "LANDING SUCCESS" if pred_class == 1 else "LANDING FAILURE"
+            label_color = COLORS['green'] if pred_class == 1 else COLORS['red']
 
-            if pred_class == 1:
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1B5E20 0%, #0D7377 100%); 
-                            padding: 30px; border-radius: 20px; border: 2px solid #00BCD4;
-                            text-align: center; margin-top: 20px;">
-                    <h2 style="color: #00BCD4; font-size: 36px; margin-bottom: 10px;">✦ SUCCESS PROBABLE ✦</h2>
-                    <p style="color: #FFF8E1; font-size: 24px; font-weight: bold;">{pred_proba[1]*100:.1f}% Confidence</p>
-                    <p style="color: #0D7377; font-style: italic; margin-top: 15px;">
-                    The oracle foresees a successful landing. Mission parameters align with historical success patterns.
-                    </p>
+            st.markdown(f"""
+            <div style="background:{COLORS['surface']}; border:1px solid {COLORS['border2']};
+                        padding:24px; margin-top:4px; font-family:'Space Mono',monospace;">
+                <div style="font-size:9px; color:{COLORS['muted']}; letter-spacing:0.15em;
+                            text-transform:uppercase; margin-bottom:16px;">Prediction output</div>
+                <div style="font-size:28px; font-weight:800; color:{label_color};
+                            font-family:'Syne',sans-serif; margin-bottom:8px;">{label}</div>
+                <div style="font-size:13px; color:{COLORS['text']}; margin-bottom:20px;">
+                    Landing success probability:
+                    <span style="color:{COLORS['white']}; font-weight:700; font-size:16px;"> {confidence:.1f}%</span>
                 </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #4A0000 0%, #B71C1C 100%); 
-                            padding: 30px; border-radius: 20px; border: 2px solid #FF6B6B;
-                            text-align: center; margin-top: 20px;">
-                    <h2 style="color: #FF6B6B; font-size: 36px; margin-bottom: 10px;">⚠ CAUTION ADVISED ⚠</h2>
-                    <p style="color: #FFF8E1; font-size: 24px; font-weight: bold;">{pred_proba[0]*100:.1f}% Risk</p>
-                    <p style="color: #FFF8E1; font-style: italic; margin-top: 15px;">
-                    The oracle detects elevated risk parameters. Consider mission refinement.
-                    </p>
+                <div style="height:6px; background:{COLORS['border']}; border-radius:1px; margin-bottom:8px;">
+                    <div style="height:100%; width:{bar_w}%; background:{bar_color};
+                                border-radius:1px; transition:width 0.3s ease;"></div>
                 </div>
-                """, unsafe_allow_html=True)
+                <div style="display:flex; justify-content:space-between; font-size:9px; color:{COLORS['muted']};">
+                    <span>0%</span><span>Confidence interval</span><span>100%</span>
+                </div>
+                <div style="margin-top:18px; padding-top:14px; border-top:1px solid {COLORS['border']};
+                            font-size:10px; color:{COLORS['muted']}; line-height:1.8;">
+                    Model: RandomForestClassifier · Estimators: 100 · Max depth: 5<br>
+                    Train/test split: 70/30 · Stratified sampling
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
     else:
-        st.warning("⚠ Insufficient data diversity for predictive modeling. Adjust filters to include more varied outcomes.")
+        st.warning("Insufficient data variance for classification. Adjust filters to include a broader sample.")
 
-# ============================================================
-# FOOTER
-# ============================================================
+
+# ── FOOTER ─────────────────────────────────────────────────────────────────────
 st.markdown("<hr>", unsafe_allow_html=True)
-st.markdown("""
-<div style="text-align: center; padding: 30px 0;">
-    <p style="color: #D4AF37; font-size: 14px; letter-spacing: 3px;">⟁ PROJECT ALPHA: LAUNCH ECONOMICS ⟁</p>
-    <p style="color: #0D7377; font-size: 12px; font-style: italic;">
-    A Sacred Analysis of SpaceX Falcon 9 Operational Economics | Data Science Portfolio 2026
-    </p>
-    <p style="color: #4A0E4E; font-size: 10px; margin-top: 10px;">
-    Built with Python, Streamlit, Plotly & Sacred Geometry
-    </p>
+st.markdown(f"""
+<div style="display:flex; justify-content:space-between; align-items:center;
+            padding:12px 0 24px; font-family:'Space Mono',monospace;">
+    <div>
+        <div style="font-size:10px; color:{COLORS['white']}; font-weight:700; margin-bottom:3px;">
+            Project Alpha — Launch Economics
+        </div>
+        <div style="font-size:9px; color:{COLORS['muted']};">
+            SpaceX Falcon 9 · Operational Economics Analysis · 2010–2021
+        </div>
+    </div>
+    <div style="font-size:9px; color:{COLORS['muted']}; text-align:right;">
+        Python · Streamlit · Plotly · scikit-learn<br>
+        Data Science Portfolio · 2026
+    </div>
 </div>
 """, unsafe_allow_html=True)
